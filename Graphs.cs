@@ -11,7 +11,7 @@ namespace VizzHuiz
     {
         public Vector2 Coords {get; set;}
         Dictionary<Node, List<Edge>> node_edges;
-        public int AdjasentCount { get; private set; }
+        public int AdjasentCount => node_edges.Count;
         public int EdgesCount { get; private set; }
         public IEnumerable<Node> AdjasentNodes => node_edges.Select(n_e => n_e.Key);
         public IEnumerable<Edge> IncidentEdges => node_edges.SelectMany(n_e => n_e.Value);
@@ -32,14 +32,17 @@ namespace VizzHuiz
         }
         public void Connect(Node node, int weight=1)
         {
-            EdgesCount++;
             List<Edge> edges;
             if(!node_edges.TryGetValue(node, out edges))
-                edges = new List<Edge>() {new Edge(this, node, weight)};
+            {
+                edges = new List<Edge>() { new Edge(this, node, weight) };
                 node_edges[node] = edges;
-                AdjasentCount++;
-
-            node_edges[node].Add(new Edge(this, node, weight));
+            }
+            else
+            {
+                node_edges[node].Add(new Edge(this, node, weight));
+                EdgesCount++;
+            }
         }
     }
     class Edge
@@ -201,7 +204,7 @@ namespace VizzHuiz
             int x, y, total = size;
             var rand = new Random();
 
-            var node_list = new List<Node>();
+            var node_list = new List<Node>(size);
             var queue = new Queue<Node>();
 
             x = rand.Next(0, Constants.InitialWidth);
@@ -360,6 +363,10 @@ namespace VizzHuiz
         private void GraphDrawHelper(ConsoleDrawer drawer)
         {
             DrawEdgesHelper(drawer, Edges, ConsoleColor.White);
+            var dw = ConsoleDrawer.GetDeltaWidth();
+            var dh = ConsoleDrawer.GetDeltaHeight();
+            drawer.WriteAt('C', (int)(CenterNode.Coords.X * dw), (int)(CenterNode.Coords.Y * dh),
+            ConsoleColor.Yellow);
         }
         private void BFSDrawHelper(Node from, ConsoleDrawer drawer)
         {
@@ -423,28 +430,35 @@ namespace VizzHuiz
             var visited = new HashSet<Node>();
 
             queue.Enqueue(Tuple.Create(CenterNode, edgeLen));
+            visited.Add(CenterNode);
 
-            //forcing bfs algoritm to evaluate positions of nodes
             while (queue.Count != 0)
             {
                 var current = queue.Dequeue();
-
-                if(visited.Contains(current.Item1)) continue;
                 visited.Add(current.Item1);
 
                 //creating pointer with outcome edge length
                 var pointer = new Vector2(0, current.Item2);
                 //we will rotate pointer to place outcome nodes in circle
-                var deltaAng = (float)Math.PI * 2 / current.Item1.AdjasentCount;
+                var deltaAng = ((float)Math.PI * 2) / current.Item1.AdjasentCount;
 
-                foreach (var adj in current.Item1.AdjasentNodes)
+                foreach (var adj in current.Item1.AdjasentNodes.Where(n => !visited.Contains(n)))
                 {
                     adj.Coords = current.Item1.Coords + pointer;
                     queue.Enqueue(Tuple.Create(adj, current.Item2 / 2));
-
                     pointer = pointer.Rotate(deltaAng);
+                    visited.Add(adj);
                 }
             }
+        }
+        public void PrintGraphVizRepresent()
+        {
+            Console.WriteLine("digraph {");
+            foreach (var edge in Edges)
+            {
+                Console.WriteLine($"{edge.Node1.Value} -> {edge.Node2.Value};");   
+            }
+            Console.WriteLine("}");
         }
     }
 }

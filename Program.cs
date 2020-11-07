@@ -90,8 +90,20 @@ namespace VizzHuiz
                         }
                         break;
                     
-                    case "dropall":
+                    case "dropall": 
                         Graphs.Clear();
+                        break;
+
+                    case "drop":
+                        Graph graph;
+                        if (!Graphs.TryRemove(commands[1], out graph))
+                        {
+                            Console.WriteLine($"No such graph {commands[1]}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Success removing graph {commands[1]}");
+                        }
                         break;
 
                     default:
@@ -167,13 +179,14 @@ namespace VizzHuiz
         }
         static void Main(string[] args)
         {
-            var graph = Graph.CreateRandomTree(30);
-            graph.ReplaneGraphCircled();
-            graph.DrawBFSToConsole(graph.CenterNode, 10);
+            // var graph = Graph.CreateRandom(30);
+            // graph.ReplaneGraphCircled();
+            // graph.DrawBFSToConsole(graph.Nodes.First(), 10);
+            //graph.PrintGraphVizRepresent();
 
-            // Graphs = new ConcurrentDictionary<string, Graph>();
-            //  var execute = Task.Run(() => ExecuteCommandsAsync());
-            //  while(!execute.IsCompleted);
+            Graphs = new ConcurrentDictionary<string, Graph>();
+            var execute = Task.Run(() => ExecuteCommandsAsync());
+            while(!execute.IsCompleted);
         }
     }
 }
